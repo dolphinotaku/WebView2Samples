@@ -15,6 +15,7 @@ namespace WinForms_GettingStarted
     public partial class frmDocumentPreview : Form
     {
         protected bool isImage;
+        protected bool isDebug;
 
         private const long kilMaxImageSizePixel = 9000000;
         private float igCurrZoom;
@@ -44,7 +45,11 @@ namespace WinForms_GettingStarted
         private long ilOriHeight;
         private long ilOriWidth;
 
-        public frmDocumentPreview(object tupleObj, bool isImage = true)
+        private DocPreview tupleObj;
+
+        private List<string> filePathList;
+
+        public frmDocumentPreview(DocPreview _tupleObj, bool _isDebug = false)
         {
             InitializeComponent();
 
@@ -53,8 +58,9 @@ namespace WinForms_GettingStarted
             this.Load += new System.EventHandler(this.frmDocumentPreview_Load);
             this.Resize += new System.EventHandler(this.frmDocumentPreview_Resize);
 
-
-            this.isImage = isImage;
+            this.isImage = _tupleObj.isSupportedImage;
+            this.tupleObj = _tupleObj;
+            this.isDebug = _isDebug;
         }
 
         private void btnZoomOut_Click(object sender, EventArgs e)
@@ -128,12 +134,37 @@ namespace WinForms_GettingStarted
         {
             await InitializeAsync();
 
-            byte[] fileByte = this.ReadPdf();
+            byte[] fileByte = this.LoadPdf();
+            this.tupleObj.ByteArray = fileByte;
 
             this.EmbedPdf(fileByte);
         }
 
-        public byte[] ReadPdf()
+
+        public byte[] LoadPdf()
+        {
+            if (this.isDebug)
+            {
+                byte[] fileByte = this.ReadDuumyPdf();
+                return fileByte;
+            }
+            else
+            {
+                if (tupleObj.ByteArray?.Length > 0)
+                {
+                    //return this.ConvertStreamToByteArray(this.tupleObj.Stream);
+                    return tupleObj.ByteArray;
+                }
+                if (tupleObj.MemoryStream?.Length > 0)
+                {
+                    return this.tupleObj.MemoryStream.ToArray();
+                }
+            }
+
+            return new byte[] { };
+        }
+
+        public byte[] ReadDuumyPdf()
         {
             //This will give us the full name path of the executable file:
             //i.e. C:\Program Files\MyApplication\MyApplication.exe
@@ -142,73 +173,112 @@ namespace WinForms_GettingStarted
             //C:\Program Files\MyApplication
             string strWorkPath = System.IO.Path.GetDirectoryName(strExeFilePath);
 
-            string filePath = $"{strWorkPath}\\sample\\sample.pdf";
-
-            //var uri = new System.Uri(@"C:\SMILE_Software\sample.pdf");
+            string filePath = $"{strWorkPath}\\sample\\7MB_Latest_Travel_Requirements.pdf";
 
             Byte[] bytes = null;
             if (File.Exists(filePath))
                 bytes = File.ReadAllBytes(filePath);
             Byte[] fake_fileByte = Convert.FromBase64String(dummyPDF_Base64file);
 
-            bytes = fake_fileByte;
+            if (bytes == null || bytes.Length == 0)
+                bytes = fake_fileByte;
             return bytes;
         }
 
-
-
-        public async Task InitializeAsync()
-        {
-            if (this.webView.CoreWebView2 == null)
-            {
-                this.webView.CoreWebView2InitializationCompleted += this.CoreWebView2InitializationCompleted;
-                await webView.EnsureCoreWebView2Async(null);
-                webView.CoreWebView2.WebMessageReceived += WebViewUpdateAddressBar;
-                // if using base64 file, can't ensure https
-                //webView.NavigationStarting += EnsureHttps;
-            }
-
-            //await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync("window.chrome.webview.postMessage(window.document.URL);");
-            //await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync("window.chrome.webview.addEventListener(\'message\', event => alert(event.data));");
-        }
-
-        void EnsureHttps(object sender, CoreWebView2NavigationStartingEventArgs args)
-        {
-            String uri = args.Uri;
-            if (!uri.StartsWith("https://"))
-            {
-                webView.CoreWebView2.ExecuteScriptAsync($"alert('{uri} is not safe, try an https link')");
-                args.Cancel = true;
-            }
-        }
-        public void WebViewUpdateAddressBar(object sender, CoreWebView2WebMessageReceivedEventArgs args)
-        {
-            String uri = args.TryGetWebMessageAsString();
-            //addressBar.Text = uri;
-            webView.CoreWebView2.PostWebMessageAsString(uri);
-        }
 
         public void EmbedPdf(byte[] fileByte)
         {
             String base64 = Convert.ToBase64String(fileByte);
             string _dummyBase64file = base64;
 
-            // read pdf via base64
-            //string html = "<!DOCTYPE html><html><head></head><body><div>" +
-            //    $"<iframe width=100% height=500 src=\"data:application/pdf;base64,{base64file}\">" +
-            //    "</iframe></div></body></html>";
-            //webView.NavigateToString(html);
+            var inMb = (fileByte.Length / 1024.0F / 1024.0F);
 
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("<!DOCTYPE html><html><head></head><body style=\"width: 100vw; height: 100vh; margin: 0px; padding: 0px; overflow: hidden\"><div style=\"height:100%\">");
-            sb.AppendLine($"<iframe width=\"100%\" height=\"100%\" frameborder=\"0\" style=\"overflow: hidden; border: none; height: 100%; width: 100%\" src=\"data:application/pdf;base64,{_dummyBase64file}\">");
-            sb.AppendLine("</iframe></div></body></html>");
-            webView.NavigateToString(sb.ToString());
+            try
+            {
+                if (inMb >= 1)
+                {
+                    // add custom event handler
+                    // unregister first, to avoid duplicate added if webView is not disposed
+                    //webView.CoreWebView2.RemoveWebResourceRequestedFilter("https://template/*", CoreWebView2WebResourceContext.All);
+                    //webView.CoreWebView2.WebResourceRequested -= WebView_OnWebResourceRequested;
 
-            // read pdf via URL, local file path
-            //var uri = new System.Uri(filePath);
-            //var converted = uri.AbsoluteUri;
-            //webView.Source = uri;
+                    webView.CoreWebView2.AddWebResourceRequestedFilter("https://template/*", CoreWebView2WebResourceContext.All);
+                    webView.CoreWebView2.WebResourceRequested += WebView_OnWebResourceRequested;
+
+                    string key = Guid.NewGuid().ToString();
+                    webView.Source = new Uri($@"https://template/?key={key}");
+
+                    // tested the PrintAsync is not support on pdf file
+                    // this is a known bug 
+                    // and fixed in WebView2 preview channels, please test using edge canary channel
+                    // please read https://github.com/MicrosoftEdge/WebView2Feedback/issues/3007
+
+                    // result: printer always print a blank page
+                    //string printerName = "MDHP078Q";
+                    //CoreWebView2PrintSettings printSettings = GetSelectedPrinterPrintSettings(printerName);
+                    //string title = webView.CoreWebView2.DocumentTitle;
+
+                    //try
+                    //{
+                    //    Task <CoreWebView2PrintStatus> awaitll = webView.CoreWebView2.PrintAsync(printSettings);
+                    //    //awaitll.Wait();
+                    //    CoreWebView2PrintStatus printStatus = awaitll.Result;
+
+                    //    if (printStatus == CoreWebView2PrintStatus.Succeeded)
+                    //    {
+                    //        MessageBox.Show(this, "Printing " + title + " document to printer succeeded", "Print to printer");
+                    //    }
+                    //    else if (printStatus == CoreWebView2PrintStatus.PrinterUnavailable)
+                    //    {
+                    //        MessageBox.Show(this, "Selected printer is not found, not available, offline or error state", "Print to printer");
+                    //    }
+                    //    else
+                    //    {
+                    //        MessageBox.Show(this, "Printing " + title + " document to printer is failed", "Print");
+                    //    }
+                    //}
+                    //catch (ArgumentException)
+                    //{
+                    //    MessageBox.Show(this, "Invalid settings provided for the specified printer", "Print");
+                    //}
+                    //catch (Exception)
+                    //{
+                    //    MessageBox.Show(this, "Printing " + title + " document already in progress", "Print");
+                    //}
+                }
+                else
+                {
+                    StringBuilder sb = new StringBuilder();
+                    sb.AppendLine("<!DOCTYPE html><html><head></head><body style=\"width: 100vw; height: 100vh; margin: 0px; padding: 0px; overflow: hidden\"><div style=\"height:100%\">");
+                    sb.AppendLine($"<iframe width=\"100%\" height=\"100%\" frameborder=\"0\" style=\"overflow: hidden; border: none; height: 100%; width: 100%\" src=\"data:application/pdf;base64,{_dummyBase64file}\">");
+                    sb.AppendLine("</iframe></div></body></html>");
+                    string htmlContent = sb.ToString();
+                    webView.NavigateToString(htmlContent);
+                }
+
+                // read pdf via URL, local file path
+                //var uri = new System.Uri(filePath);
+                //var converted = uri.AbsoluteUri;
+                //webView.Source = uri;
+            }
+            catch (Exception e)
+            {
+                // temporary handling - large file, save file to physcial disk and open file by windows URL (e.g file://)
+                string randomFileName = Guid.NewGuid().ToString("N").Substring(0, 12);
+                string tempDirectory = System.IO.Path.GetTempPath();
+                string tempFilePath = Path.Combine(tempDirectory, randomFileName);
+                using (FileStream fs = new FileStream(tempFilePath, FileMode.Create, System.IO.FileAccess.Write))
+                {
+                    fs.Write(fileByte, 0, fileByte.Length);
+                }
+
+                this.filePathList.Add(tempFilePath);
+
+                // read pdf via URL, local file path
+                var uri = new System.Uri(tempFilePath);
+                //var converted = uri.AbsoluteUri;
+                webView.Source = uri;
+            }
         }
 
         private Bitmap LoadImage()
@@ -456,6 +526,123 @@ namespace WinForms_GettingStarted
         private void CoreWebView2InitializationCompleted(object sender, CoreWebView2InitializationCompletedEventArgs e)
         {
             Console.WriteLine("WebView2 initialized");
+        }
+
+
+        // Gets the print settings for the selected printer.
+        // You can also get the capabilities from the native printer API, and display them 
+        // to the user to get the print settings for the current webpage and for the selected printer.
+        CoreWebView2PrintSettings GetSelectedPrinterPrintSettings(string printerName)
+        {
+            CoreWebView2PrintSettings printSettings = null;
+            printSettings = this.webView.CoreWebView2.Environment.CreatePrintSettings();
+            printSettings.ShouldPrintBackgrounds = true;
+            printSettings.ShouldPrintHeaderAndFooter = true;
+            if (!string.IsNullOrEmpty(printerName))
+            {
+                printSettings.PrinterName = printerName;
+            }
+            return printSettings;
+
+            // or
+            // Get PrintQueue for the selected printer and use GetPrintCapabilities() of PrintQueue from System.Printing
+            // to get the capabilities of the selected printer.
+            // Display the printer capabilities to the user along with the page settings.
+            // Return the user selected settings.
+        }
+
+        public async Task InitializeAsync()
+        {
+            if (this.webView.CoreWebView2 == null)
+            {
+                this.webView.CoreWebView2InitializationCompleted += this.CoreWebView2InitializationCompleted;
+
+                // initlize webView's CoreWebView2 property
+                await webView.EnsureCoreWebView2Async(null);
+                webView.CoreWebView2.WebMessageReceived += WebViewUpdateAddressBar;
+                // if using base64 file, can't ensure https
+                //webView.NavigationStarting += EnsureHttps;
+            }
+
+            //await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync("window.chrome.webview.postMessage(window.document.URL);");
+            //await webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync("window.chrome.webview.addEventListener(\'message\', event => alert(event.data));");
+        }
+
+        void WebView_OnWebResourceRequested(object sender, CoreWebView2WebResourceRequestedEventArgs args)
+        {
+            CoreWebView2WebResourceResponse webResourceResponse = null;
+
+            // convert string -> byte array -> MemoryStream
+            // Intercept the web resource request; set the response as the large html content string.
+            //string responseDataString = "<html><head><title>Hello World</title></head><body><h1>Large content</h1></body></html>";
+            //UTF8Encoding utfEncoding = new UTF8Encoding();
+            //byte[] responseData = utfEncoding.GetBytes(
+            //    responseDataString);
+            //MemoryStream responseDataStream = new MemoryStream(responseDataString.Length);
+            //responseDataStream.Write(responseData, 0, responseData.Length);
+            //responseDataStream.Seek(0, SeekOrigin.Begin);
+            //webResourceResponse = webView.CoreWebView2.Environment.CreateWebResourceResponse(
+            //    responseDataStream,
+            //    200,
+            //    "OK",
+            //    "Content-Type: text/html\r\n");
+
+            try
+            {
+                Stream stream = new MemoryStream(this.tupleObj.MemoryStream.ToArray());
+
+                Stream ms = new ManagedStream(stream);
+                string headers = "";
+                //if (assetsFilePath.EndsWith(".html"))
+                //{
+                //    headers = "Content-Type: text/html";
+                //}
+                //else if (assetsFilePath.EndsWith(".jpg"))
+                //{
+                //    headers = "Content-Type: image/jpeg";
+                //}
+                //else if (assetsFilePath.EndsWith(".png"))
+                //{
+                //    headers = "Content-Type: image/png";
+                //}
+                //else if (assetsFilePath.EndsWith(".css"))
+                //{
+                //    headers = "Content-Type: text/css";
+                //}
+                //else if (assetsFilePath.EndsWith(".js"))
+                //{
+                //    headers = "Content-Type: application/javascript";
+                //}
+                headers = "Content-Type: application/pdf";
+                webResourceResponse = webView.CoreWebView2.Environment.CreateWebResourceResponse(
+                                                                    ms, 200, "OK", headers);
+            }
+            catch (Exception)
+            {
+                webResourceResponse = webView.CoreWebView2.Environment.CreateWebResourceResponse(
+                                                                null, 404, "Not found", "");
+            }
+            finally
+            {
+
+                args.Response = webResourceResponse;
+            }
+        }
+
+        void EnsureHttps(object sender, CoreWebView2NavigationStartingEventArgs args)
+        {
+            String uri = args.Uri;
+            if (!uri.StartsWith("https://"))
+            {
+                webView.CoreWebView2.ExecuteScriptAsync($"alert('{uri} is not safe, try an https link')");
+                args.Cancel = true;
+            }
+        }
+        public void WebViewUpdateAddressBar(object sender, CoreWebView2WebMessageReceivedEventArgs args)
+        {
+            String uri = args.TryGetWebMessageAsString();
+            //addressBar.Text = uri;
+            webView.CoreWebView2.PostWebMessageAsString(uri);
         }
     }
 }

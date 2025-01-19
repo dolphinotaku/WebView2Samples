@@ -88,6 +88,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DocPreview.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -100,6 +101,7 @@
     <Compile Include="frmDocumentPreview.Designer.cs">
       <DependentUpon>frmDocumentPreview.cs</DependentUpon>
     </Compile>
+    <Compile Include="ManagedStream.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Form1.resx">
@@ -130,6 +132,15 @@
     <EmbeddedResource Include="sample\sample.pdf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
+    <None Include="sample\15MB.fitness_guildlines090519.pdf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="sample\26MB_MR-B46Z.pdf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="sample\7MB_Latest_Travel_Requirements.pdf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="WinForms_GettingStarted_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
