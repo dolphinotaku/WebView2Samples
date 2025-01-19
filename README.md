@@ -1,33 +1,56 @@
-# WebView2 Samples
+this project fork from Microsoft [WebView2Samples](https://github.com/MicrosoftEdge/WebView2Samples), plus large PDF file size handling
 
-Welcome to the WebView2Samples repo.  This repo contains several types of samples for [WebView2](https://learn.microsoft.com/microsoft-edge/webview2/):
+# Read Pdf in WinForm by WebView2 
 
-*  Getting Started tutorial projects - Completed Visual Studio projects that result from following the steps in the [Getting Started tutorials](https://learn.microsoft.com/microsoft-edge/webview2/get-started/get-started).  These are like Hello World basic apps.
+I tested 7MB, 15MB, 26MB pdf, all are successfully read and view in webView2
 
-*  Sample apps - WebView2 sample apps for various frameworks and platforms, as Visual Studio projects.  These samples have menus and demonstrate various APIs.  For more information, see [Sample apps](https://learn.microsoft.com/microsoft-edge/webview2/code-samples-links).
+# Main changes
 
-*  Deployment samples - Samples that demonstrate deploying the WebView2 Runtime.  For more information, see [Deployment samples](https://learn.microsoft.com/microsoft-edge/webview2/samples/deployment-samples).
+add requestedFilter on URL `https://example.com` or `https://template/*` in my code
 
+in the captured event, custom generate your webpage with the big pdf in base64 in HTML
 
-## Contributing
+fire your webView2 always on the `https://example.com` or `https://template/*`<br>
+e.g `webView.Source = new Uri($@"https://template/");`
 
-This project welcomes contributions and suggestions.  Most contributions require you to agree to a
-Contributor License Agreement (CLA) declaring that you have the right to, and actually do, grant us
-the rights to use your contribution. For details, visit https://cla.opensource.microsoft.com.
+## Futher
 
-When you submit a pull request, a CLA bot will automatically determine whether you need to provide
-a CLA and decorate the PR appropriately (e.g., status check, comment). Simply follow the instructions
-provided by the bot. You will only need to do this once across all repos using our CLA.
+the user requirements may concern save as, print by right click or tool bar on webView2
 
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
-For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or
-contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+Please read HiddenPdfToolbarItems Property
+
+https://learn.microsoft.com/en-us/dotnet/api/microsoft.web.webview2.core.corewebview2settings.hiddenpdftoolbaritems?view=webview2-dotnet-1.0.2903.40
 
 
-## Trademarks
+capture the mouse and deactivate “right click”
 
-This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft 
-trademarks or logos is subject to and must follow 
-[Microsoft Trademark and Brand Guidelines](https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks/usage/general).
-Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship.
-Any use of third-party trademarks or logos are subject to those third-party's policies.
+https://stackoverflow.com/questions/18398058/disable-right-click-menu-on-webview
+
+##
+
+```
+void AddResourceFilterCmdExecuted(object target, ExecutedRoutedEventArgs e)
+{
+    // Add a filter to intercept requests made to https://example.com
+    // Then replace the response with a large html string.
+    webView.CoreWebView2.AddWebResourceRequestedFilter("https://example.com", CoreWebView2WebResourceContext.All);
+    webView.CoreWebView2.WebResourceRequested += WebView_OnWebResourceRequested;
+}
+
+void WebView_OnWebResourceRequested(object sender, CoreWebView2WebResourceRequestedEventArgs e)
+{
+    // Intercept the web resource request; set the response as the large html content string.
+    string responseDataString = "<html><head><title>Hello World</title></head><body><h1>Large content</h1></body></html>";
+    UTF8Encoding utfEncoding = new UTF8Encoding();
+    byte[] responseData = utfEncoding.GetBytes(
+        responseDataString);
+    ...
+    e.Response = webResourceResponse;
+}
+```
+
+# Reference
+
+[NavigateToString with a very large string shows error "Value does not fall within the expected range"](https://github.com/MicrosoftEdge/WebView2Feedback/issues/1355)
+
+[Working with local content in WebView2 apps - Microsoft Edge Developer documentation | Microsoft Learn.](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/working-with-local-content?tabs=dotnetcsharp#loading-local-content-by-handling-the-webresourcerequested-event)
