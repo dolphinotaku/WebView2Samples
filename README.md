@@ -13,6 +13,11 @@ in the captured event, custom generate your webpage with the big pdf in base64 i
 fire your webView2 always on the `https://example.com` or `https://template/*`<br>
 e.g `webView.Source = new Uri($@"https://template/");`
 
+## Debug
+Which I didn't implement
+
+Suggested to append id in URL e.g https://example.com?file=fileId for easy to trace, logging for debug and/or HTTP redirections purpose
+
 ## Futher
 
 the user requirements may concern save as, print by right click or tool bar on webView2
