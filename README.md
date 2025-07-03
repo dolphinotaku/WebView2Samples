@@ -58,4 +58,8 @@ void WebView_OnWebResourceRequested(object sender, CoreWebView2WebResourceReques
 
 [NavigateToString with a very large string shows error "Value does not fall within the expected range"](https://github.com/MicrosoftEdge/WebView2Feedback/issues/1355)
 
-[Working with local content in WebView2 apps - Microsoft Edge Developer documentation | Microsoft Learn.](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/working-with-local-content?tabs=dotnetcsharp#loading-local-content-by-handling-the-webresourcerequested-event)
+[Introduction to Microsoft Edge WebView2 - Microsoft Edge Developer documentation | Microsoft Learn](https://learn.microsoft.com/zh-hk/microsoft-edge/webview2/?form=MA13LH#sequence-of-samples-to-install-and-run)
+
+[Using local content in WebView2 apps - Loading local content by handling the WebResourceRequested event | Microsoft Learn.](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/working-with-local-content?tabs=dotnetcsharp#loading-local-content-by-handling-the-webresourcerequested-event)
+
+[https://learn.microsoft.com/en-us/microsoft-edge/webview2/get-started/get-started](https://learn.microsoft.com/en-us/microsoft-edge/webview2/get-started/get-started)
