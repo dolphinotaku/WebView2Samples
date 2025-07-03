@@ -62,4 +62,4 @@ void WebView_OnWebResourceRequested(object sender, CoreWebView2WebResourceReques
 
 [Using local content in WebView2 apps - Loading local content by handling the WebResourceRequested event | Microsoft Learn.](https://learn.microsoft.com/en-us/microsoft-edge/webview2/concepts/working-with-local-content?tabs=dotnetcsharp#loading-local-content-by-handling-the-webresourcerequested-event)
 
-[https://learn.microsoft.com/en-us/microsoft-edge/webview2/get-started/get-started](https://learn.microsoft.com/en-us/microsoft-edge/webview2/get-started/get-started)
+[Getting Started tutorials](https://learn.microsoft.com/en-us/microsoft-edge/webview2/get-started/get-started)
