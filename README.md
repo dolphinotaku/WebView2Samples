@@ -2,7 +2,11 @@ this project fork from Microsoft [WebView2Samples](https://github.com/MicrosoftE
 
 # Read Pdf in WinForm by WebView2 
 
-I tested 7MB, 15MB, 26MB pdf, all are successfully read and view in webView2
+Only amended the winForms project 
+
+which located in GettingStartedGuides/WinForms_GettingStarted
+
+Tested 7MB, 15MB, 26MB pdf, all are successfully read and view in webView2
 
 # Main changes
 
