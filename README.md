@@ -1,4 +1,8 @@
-this project fork from Microsoft [WebView2Samples](https://github.com/MicrosoftEdge/WebView2Samples), plus large PDF file size handling
+this project combined into here
+
+https://github.com/Otaku-Projects/display-pdf-content
+
+this project sources code fork from Microsoft [WebView2Samples](https://github.com/MicrosoftEdge/WebView2Samples), plus large PDF file size handling
 
 # Read Pdf in WinForm by WebView2 
 
